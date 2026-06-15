@@ -67,8 +67,6 @@ import androidx.media3.exoplayer.analytics.PlaybackStats
 import androidx.media3.exoplayer.analytics.PlaybackStatsListener
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
-import androidx.media3.exoplayer.LoadErrorHandlingPolicy
-import androidx.media3.exoplayer.drm.DrmSessionManagerProvider
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
@@ -3729,41 +3727,10 @@ class MusicService :
         }
     }
 
-    private fun createMediaSourceFactory(): MediaSource.Factory {
-        val innerFactory = DefaultMediaSourceFactory(
-            createDataSourceFactory(),
-            DefaultExtractorsFactory(),
-        )
-        return object : MediaSource.Factory {
-            override fun createMediaSource(mediaItem: MediaItem): MediaSource {
-                val uri = mediaItem.localConfiguration?.uri
-                val updatedItem = if (uri != null && uri.toString().startsWith("data:application/dash+xml")) {
-                    mediaItem.buildUpon()
-                        .setMimeType("application/dash+xml")
-                        .build()
-                } else {
-                    mediaItem
-                }
-                return innerFactory.createMediaSource(updatedItem)
-            }
-
-            override fun setDrmSessionManagerProvider(
-                drmSessionManagerProvider: DrmSessionManagerProvider,
-            ): MediaSource.Factory {
-                innerFactory.setDrmSessionManagerProvider(drmSessionManagerProvider)
-                return this
-            }
-
-            override fun setLoadErrorHandlingPolicy(
-                loadErrorHandlingPolicy: LoadErrorHandlingPolicy,
-            ): MediaSource.Factory {
-                innerFactory.setLoadErrorHandlingPolicy(loadErrorHandlingPolicy)
-                return this
-            }
-
-            override fun getSupportedTypes(): IntArray = innerFactory.supportedTypes
-        }
-    }
+    private fun createMediaSourceFactory() = DefaultMediaSourceFactory(
+        createDataSourceFactory(),
+        DefaultExtractorsFactory(),
+    )
 
     private fun createRenderersFactory(
         eqProcessor: CustomEqualizerAudioProcessor,
