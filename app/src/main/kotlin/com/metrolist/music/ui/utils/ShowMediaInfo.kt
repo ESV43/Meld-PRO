@@ -44,11 +44,14 @@ import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.db.entities.FormatEntity
+import com.metrolist.music.db.entities.QobuzMatchEntity
 import com.metrolist.music.db.entities.Song
 import com.metrolist.music.ui.component.Material3SettingsGroup
 import com.metrolist.music.ui.component.Material3SettingsItem
 import com.metrolist.music.ui.component.shimmer.ShimmerHost
 import com.metrolist.music.ui.component.shimmer.TextPlaceholder
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ShowMediaInfo(videoId: String) {
@@ -64,18 +67,30 @@ fun ShowMediaInfo(videoId: String) {
     var song by remember { mutableStateOf<Song?>(null) }
 
     var currentFormat by remember { mutableStateOf<FormatEntity?>(null) }
+    var monochromeMatch by remember { mutableStateOf<QobuzMatchEntity?>(null) }
 
     val playerConnection = LocalPlayerConnection.current
     val context = LocalContext.current
 
     LaunchedEffect(Unit, videoId) {
-        info = YouTube.getMediaInfo(videoId).getOrNull()
-    }
-
-    LaunchedEffect(Unit, videoId) {
         database.song(videoId).collect {
             song = it
         }
+    }
+
+    LaunchedEffect(videoId) {
+        monochromeMatch = withContext(Dispatchers.IO) { database.getQobuzMatch(videoId) }
+    }
+
+    val isMonochrome = currentFormat?.itag == 999
+
+    LaunchedEffect(videoId, isMonochrome) {
+        info =
+            if (isMonochrome) {
+                null
+            } else {
+                YouTube.getMediaInfo(videoId).getOrNull()
+            }
     }
 
     LaunchedEffect(Unit, videoId) {
@@ -94,7 +109,7 @@ fun ShowMediaInfo(videoId: String) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        if (info != null && song != null) {
+        if (song != null && currentFormat != null && (isMonochrome || info != null)) {
             item(contentType = "MediaDetails") {
                 Column {
                     val baseList = listOf(
@@ -109,40 +124,40 @@ fun ShowMediaInfo(videoId: String) {
                         R.drawable.media3_icon_bookmark_filled,
                     )
 
-                    val iconsList = listOf(
-                        R.drawable.media3_icon_feed,
-                        R.drawable.media3_icon_thumb_up_unfilled,
-                        R.drawable.media3_icon_thumb_down_unfilled,
-                        R.drawable.key,
-                        R.drawable.info,
-                        R.drawable.radio,
-                        R.drawable.gradient,
-                        R.drawable.contrast,
-                        R.drawable.volume_up,
-                        R.drawable.volume_mute,
-                        R.drawable.content_copy
-                    )
-
                     val extendedList = if (currentFormat != null) {
-                        listOf(
-                            stringResource(R.string.views) to info?.viewCount?.let(::numberFormatter).orEmpty(),
-                            stringResource(R.string.likes) to info?.like?.let(::numberFormatter).orEmpty(),
-                            stringResource(R.string.dislikes) to info?.dislike?.let(::numberFormatter).orEmpty(),
-                            "Itag" to currentFormat?.itag?.toString(),
-                            stringResource(R.string.mime_type) to currentFormat?.mimeType,
-                            stringResource(R.string.codecs) to currentFormat?.codecs,
-                            stringResource(R.string.bitrate) to currentFormat?.bitrate?.let { "${it / 1000} Kbps" },
-                            stringResource(R.string.sample_rate) to currentFormat?.sampleRate?.let { "$it Hz" },
-                            stringResource(R.string.loudness) to currentFormat?.loudnessDb?.let { "$it dB" },
-                            stringResource(R.string.volume) to if (playerConnection != null) "${(playerConnection.player.volume * 100).toInt()}%" else null,
-                            stringResource(R.string.file_size) to
-                                    currentFormat?.contentLength?.let {
-                                        Formatter.formatShortFileSize(
-                                            context,
-                                            it
-                                        )
+                        buildList {
+                            add(
+                                stringResource(R.string.playback_source) to
+                                    stringResource(
+                                        if (isMonochrome) {
+                                            R.string.playback_source_monochrome
+                                        } else {
+                                            R.string.playback_source_youtube_music
+                                        },
+                                    ),
+                            )
+                            if (!isMonochrome) {
+                                add(stringResource(R.string.views) to info?.viewCount?.let(::numberFormatter).orEmpty())
+                                add(stringResource(R.string.likes) to info?.like?.let(::numberFormatter).orEmpty())
+                                add(stringResource(R.string.dislikes) to info?.dislike?.let(::numberFormatter).orEmpty())
+                                add("Itag" to currentFormat?.itag?.toString())
+                            } else {
+                                add(stringResource(R.string.provider_track_id) to monochromeMatch?.qobuzTrackId)
+                                add(stringResource(R.string.bit_depth) to monochromeMatch?.bitDepth?.let { "$it-bit" })
+                            }
+                            add(stringResource(R.string.mime_type) to currentFormat?.mimeType)
+                            add(stringResource(R.string.codecs) to currentFormat?.codecs)
+                            add(stringResource(R.string.bitrate) to currentFormat?.bitrate?.let { "${it / 1000} Kbps" })
+                            add(stringResource(R.string.sample_rate) to currentFormat?.sampleRate?.let { "$it Hz" })
+                            add(stringResource(R.string.loudness) to currentFormat?.loudnessDb?.let { "$it dB" })
+                            add(stringResource(R.string.volume) to if (playerConnection != null) "${(playerConnection.player.volume * 100).toInt()}%" else null)
+                            add(
+                                stringResource(R.string.file_size) to
+                                    currentFormat?.contentLength?.takeIf { it > 0 }?.let {
+                                        Formatter.formatShortFileSize(context, it)
                                     },
-                        )
+                            )
+                        }
                     } else {
                         emptyList()
                     }
@@ -164,12 +179,12 @@ fun ShowMediaInfo(videoId: String) {
                         )
                     }
 
-                    extendedList.forEachIndexed { index, (label, text) ->
+                    extendedList.forEach { (label, text) ->
                         val displayText = text ?: stringResource(R.string.unknown)
                         cardsExtendedList += Material3SettingsItem(
                             title = { Text(label) },
                             description = { Text(displayText) },
-                            icon = painterResource(iconsList[index]),
+                            icon = painterResource(R.drawable.info),
                             onClick = {
                                 cm.setPrimaryClip(ClipData.newPlainText("text", displayText))
                                 Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
@@ -191,21 +206,22 @@ fun ShowMediaInfo(videoId: String) {
 
                     Spacer(Modifier.height(8.dp))
 
-                    val descriptionText = info?.description ?: stringResource(R.string.unknown)
-
-                    Material3SettingsGroup(
-                        title = stringResource(R.string.description),
-                        items = listOf(
-                            Material3SettingsItem(
-                                title = { Text(stringResource(R.string.description)) },
-                                description = { Text(descriptionText) },
-                                onClick = {
-                                    cm.setPrimaryClip(ClipData.newPlainText("text", descriptionText))
-                                    Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
-                                }
+                    if (!isMonochrome) {
+                        val descriptionText = info?.description ?: stringResource(R.string.unknown)
+                        Material3SettingsGroup(
+                            title = stringResource(R.string.description),
+                            items = listOf(
+                                Material3SettingsItem(
+                                    title = { Text(stringResource(R.string.description)) },
+                                    description = { Text(descriptionText) },
+                                    onClick = {
+                                        cm.setPrimaryClip(ClipData.newPlainText("text", descriptionText))
+                                        Toast.makeText(context, R.string.copied, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
                             )
                         )
-                    )
+                    }
                 }
             }
         } else {

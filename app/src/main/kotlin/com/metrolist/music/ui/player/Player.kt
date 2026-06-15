@@ -70,6 +70,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -1139,27 +1140,27 @@ fun BottomSheetPlayer(
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(TextBackgroundColor.copy(alpha = 0.12f))
-                                .clickable { showQualitySelectorDialog = true }
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        Surface(
+                            onClick = { showQualitySelectorDialog = true },
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.music_note),
                                     contentDescription = null,
-                                    modifier = Modifier.size(10.dp),
-                                    tint = TextBackgroundColor.copy(alpha = 0.7f)
+                                    modifier = Modifier.size(14.dp),
                                 )
                                 Text(
                                     text = formatText,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = TextBackgroundColor.copy(alpha = 0.7f),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }

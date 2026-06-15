@@ -578,6 +578,11 @@
     <string name="monochrome_provider_health_offline">Offline</string>
     <string name="monochrome_provider_health_checking">Checking…</string>
     <string name="monochrome_provider_health_latency">%1$d ms</string>
+    <string name="playback_source">Playback source</string>
+    <string name="playback_source_monochrome">Monochrome</string>
+    <string name="playback_source_youtube_music">YouTube Music</string>
+    <string name="bit_depth">Bit depth</string>
+    <string name="provider_track_id">Provider track ID</string>
 
     <string name="qobuz_country_description">Two-letter ISO code (e.g. US, IT, FR). Affects catalog and availability.</string>
 

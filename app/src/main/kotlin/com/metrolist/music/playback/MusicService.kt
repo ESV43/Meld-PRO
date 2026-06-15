@@ -3544,7 +3544,7 @@ class MusicService :
 
                     var monochromeResolved = if (skipMonochromeForMiss) null else runCatching {
                         runBlocking(Dispatchers.IO) {
-                            withTimeout(10_000L) {
+                            withTimeout(4_000L) {
                                 MonochromeAudioProvider.resolve(effectiveQuery, monochromeBackend, customUrl)
                             }
                         }
@@ -3637,7 +3637,7 @@ class MusicService :
                     // call can't keep a song "loading" forever. ExoPlayer surfaces the
                     // PlaybackException to the user as a skip-able error.
                     try {
-                        withTimeout(30_000L) {
+                        withTimeout(15_000L) {
                             YTPlayerUtils.playerResponseForPlayback(
                                 mediaId,
                                 audioQuality = audioQuality,
