@@ -65,7 +65,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
-import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -155,12 +154,13 @@ import com.metrolist.music.db.entities.LyricsEntity
 import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.extensions.toggleRepeatMode
 import com.metrolist.music.listentogether.RoomRole
+import com.metrolist.music.lyrics.LyricsEntry
+import com.metrolist.music.lyrics.LyricsUtils
 import com.metrolist.music.models.MediaMetadata
 import com.metrolist.music.ui.component.BottomSheet
 import com.metrolist.music.ui.component.BottomSheetState
 import com.metrolist.music.ui.component.LocalBottomSheetPageState
 import com.metrolist.music.ui.component.LocalMenuState
-import com.metrolist.music.ui.component.Lyrics
 import com.metrolist.music.ui.component.PlayerSliderTrack
 import com.metrolist.music.ui.component.ResizableIconButton
 import com.metrolist.music.ui.component.SquigglySlider
@@ -1820,7 +1820,6 @@ fun BottomSheetPlayer(
                             if (showLyrics) {
                                 InlineLyricsView(
                                     mediaMetadata = mediaMetadata,
-                                    showLyrics = showLyrics,
                                     positionProvider = { effectivePosition },
                                 )
                             } else {
@@ -1883,7 +1882,6 @@ fun BottomSheetPlayer(
                             if (showLyrics) {
                                 InlineLyricsView(
                                     mediaMetadata = mediaMetadata,
-                                    showLyrics = showLyrics,
                                     positionProvider = { effectivePosition },
                                 )
                             } else {
@@ -1940,12 +1938,22 @@ fun BottomSheetPlayer(
 @Composable
 fun InlineLyricsView(
     mediaMetadata: MediaMetadata?,
-    showLyrics: Boolean,
     positionProvider: () -> Long,
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
+    val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val lyrics = remember(currentLyrics) { currentLyrics?.lyrics?.trim() }
+    val syncedLines =
+        remember(lyrics) {
+            lyrics
+                ?.takeIf { it.startsWith("[") }
+                ?.let(LyricsUtils::parseLyrics)
+                ?.filterNot { it.text.isBlank() || it.isBackground }
+                .orEmpty()
+        }
+    val effectivePosition = positionProvider() + (currentSong?.song?.lyricsOffset ?: 0)
+    val currentLineIndex = remember(syncedLines, effectivePosition) { syncedLines.currentLineIndex(effectivePosition) }
     val context = LocalContext.current
     val database = LocalDatabase.current
     val coroutineScope = rememberCoroutineScope()
@@ -1979,39 +1987,111 @@ fun InlineLyricsView(
                 .clip(RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center,
     ) {
+        mediaMetadata?.thumbnailUrl?.let { thumbnailUrl ->
+            AsyncImage(
+                model = thumbnailUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Black.copy(alpha = 0.32f),
+                                0.55f to Color.Black.copy(alpha = 0.58f),
+                                1f to Color.Black.copy(alpha = 0.78f),
+                            ),
+                        ),
+            )
+        }
+
         when {
             lyrics == null -> {
-                ContainedLoadingIndicator()
+                ContainedLoadingIndicator(color = Color.White)
             }
 
             lyrics == LyricsEntity.LYRICS_NOT_FOUND -> {
                 Text(
                     text = stringResource(R.string.lyrics_not_found),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    color = Color.White.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
                 )
             }
 
+            syncedLines.isEmpty() -> {
+                Text(
+                    text = stringResource(R.string.synced_lyrics_not_available),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.75f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 32.dp),
+                )
+            }
+
             else -> {
-                val lyricsContent: @Composable () -> Unit = {
-                    Lyrics(
-                        sliderPositionProvider = positionProvider,
-                        modifier = Modifier.padding(horizontal = 24.dp),
-                        showLyrics = showLyrics,
-                    )
-                }
-                ProvideTextStyle(
-                    value =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center,
-                        ),
+                AnimatedContent(
+                    targetState = currentLineIndex,
+                    transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(180)) },
+                    label = "CompactSyncedLyrics",
                 ) {
-                    lyricsContent()
+                    CompactSyncedLyrics(
+                        lines = syncedLines,
+                        currentLineIndex = it,
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CompactSyncedLyrics(
+    lines: List<LyricsEntry>,
+    currentLineIndex: Int,
+) {
+    Column(
+        verticalArrangement = Arrangement.Center,
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp, vertical = 24.dp),
+    ) {
+        lines.getOrNull(currentLineIndex)?.let { currentLine ->
+            Text(
+                text = currentLine.text,
+                color = Color.White,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 34.sp,
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        lines.getOrNull(currentLineIndex + 1)?.let { nextLine ->
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = nextLine.text,
+                color = Color.White.copy(alpha = 0.48f),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 26.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private fun List<LyricsEntry>.currentLineIndex(position: Long): Int {
+    val firstFutureLine = indexOfFirst { it.time > position }
+    return when {
+        firstFutureLine == -1 -> lastIndex
+        firstFutureLine == 0 -> 0
+        else -> firstFutureLine - 1
     }
 }
 
