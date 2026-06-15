@@ -4067,7 +4067,7 @@ class MusicService :
         isrc: String?,
         durationMs: Long?,
     ): List<MonochromeAudioProvider.CandidateMetadata> = withContext(Dispatchers.IO) {
-        val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.YT_HIGH)
+        val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.HIGH)
         val monochromeBackend = dataStore.get(MonochromeBackendKey).toEnum(MonochromeBackend.OFFICIAL)
         val customUrl = dataStore.get(MonochromeCustomUrlKey, "")
         val query = MonochromeAudioProvider.Query(
@@ -4078,7 +4078,7 @@ class MusicService :
             isrc = isrc,
             durationMs = durationMs,
             quality = MonochromeAudioProvider.qualityStringFor(
-                if (unifiedQuality.isMonochrome) unifiedQuality else UnifiedAudioQuality.FLAC
+                if (unifiedQuality.isMonochrome) unifiedQuality else UnifiedAudioQuality.LOSSLESS
             ),
         )
         runCatching {
@@ -4093,11 +4093,11 @@ class MusicService :
     suspend fun getStreamUrl(mediaId: String): String? =
         withContext(Dispatchers.IO) {
             try {
-                val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.YT_HIGH)
+                val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.HIGH)
                 val castQuality = when (unifiedQuality) {
-                    UnifiedAudioQuality.YT_LOW -> AudioQuality.LOW
-                    UnifiedAudioQuality.YT_MEDIUM, UnifiedAudioQuality.YT_AUTO, UnifiedAudioQuality.YT_HIGH -> AudioQuality.AUTO
-                    UnifiedAudioQuality.KBPS_320, UnifiedAudioQuality.FLAC, UnifiedAudioQuality.HIRES -> AudioQuality.HIGH
+                    UnifiedAudioQuality.LOW -> AudioQuality.LOW
+                    UnifiedAudioQuality.MEDIUM, UnifiedAudioQuality.AUTO, UnifiedAudioQuality.HIGH -> AudioQuality.AUTO
+                    UnifiedAudioQuality.VERY_HIGH, UnifiedAudioQuality.LOSSLESS, UnifiedAudioQuality.HIRES -> AudioQuality.HIGH
                 }
                 val playbackData =
                     YTPlayerUtils
