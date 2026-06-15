@@ -107,14 +107,12 @@ android {
             val debugKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
             if (!debugKeystore.exists()) {
                 debugKeystore.parentFile.mkdirs()
-                exec {
-                    commandLine(
-                        "keytool", "-genkey", "-v", "-keystore", debugKeystore.absolutePath,
-                        "-storepass", "android", "-alias", "androiddebugkey",
-                        "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048",
-                        "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US"
-                    )
-                }
+                ProcessBuilder(
+                    "keytool", "-genkey", "-v", "-keystore", debugKeystore.absolutePath,
+                    "-storepass", "android", "-alias", "androiddebugkey",
+                    "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048",
+                    "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US"
+                ).inheritIO().start().waitFor()
             }
             storeFile = debugKeystore
             storePassword = "android"
