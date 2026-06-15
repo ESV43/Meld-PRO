@@ -89,9 +89,9 @@ fun SpotifyTrackMenu(
     var showAddToPlaylistDialog by rememberSaveable { mutableStateOf(false) }
     var showSelectArtistDialog by rememberSaveable { mutableStateOf(false) }
 
-    val unifiedQualitySetting = rememberPreference(UnifiedAudioQualityKey, defaultValue = "YT_HIGH")
+    val unifiedQualitySetting = rememberPreference(UnifiedAudioQualityKey, defaultValue = "HIGH")
     val monochromeEnabled = remember(unifiedQualitySetting.value) {
-        unifiedQualitySetting.value in listOf("KBPS_320", "FLAC", "HIRES")
+        unifiedQualitySetting.value in listOf("VERY_HIGH", "LOSSLESS", "HIRES")
     }
 
     fun resolveAndNavigateToArtist(artistName: String) {
