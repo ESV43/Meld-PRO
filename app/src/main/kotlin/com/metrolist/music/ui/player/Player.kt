@@ -371,22 +371,22 @@ fun BottomSheetPlayer(
     val formatText = remember(currentFormat, activeMatch, qualityLabel) {
         val fmt = currentFormat
         if (fmt == null) {
-            "$qualityLabel • YT"
+            qualityLabel
         } else if (fmt.itag == 999) {
             val match = activeMatch
             if (match != null) {
                 if (match.hires) {
                     val depth = match.bitDepth ?: 24
                     val rate = match.samplingRateKhz?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "96"
-                    "Hi-Res FLAC (${depth}bit/${rate}kHz) • Monochrome"
+                    "Hi-Res FLAC (${depth}bit/${rate}kHz)"
                 } else {
                     val depth = match.bitDepth ?: 16
                     val rate = match.samplingRateKhz?.let { if (it % 1.0 == 0.0) it.toInt().toString() else it.toString() } ?: "44.1"
-                    "FLAC (${depth}bit/${rate}kHz) • Monochrome"
+                    "FLAC (${depth}bit/${rate}kHz)"
                 }
             } else {
                 if (fmt.mimeType.contains("flac", ignoreCase = true)) {
-                    "FLAC • Monochrome"
+                    "FLAC"
                 } else {
                     "320kbps • Monochrome"
                 }
