@@ -3484,12 +3484,12 @@ class MusicService :
             // Check if we need to bypass cache for quality change
             val shouldBypassCache = bypassCacheForQualityChange.contains(mediaId)
 
-            // Monochrome attempt: when UnifiedAudioQuality is not YT_HIGH, try Monochrome for every track.
+            // Monochrome attempt: when a Monochrome quality is selected, try Monochrome for every track.
             // Uses Spotify metadata (with ISRC) when available — otherwise falls back
             // to DB title/artist/album for YT-native tracks. Silently falls through
-            // to the YouTube path on any failure or if quality is YT_HIGH.
+            // to the YouTube path on any failure or if a YT-native quality is selected.
             val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.YT_HIGH)
-            val monochromeEnabled = unifiedQuality != UnifiedAudioQuality.YT_HIGH
+            val monochromeEnabled = unifiedQuality.isMonochrome
             if (monochromeEnabled) {
                 val monochromeBackend = dataStore.get(MonochromeBackendKey).toEnum(MonochromeBackend.OFFICIAL)
                 val customUrl = dataStore.get(MonochromeCustomUrlKey, "")
@@ -4215,7 +4215,7 @@ class MusicService :
             isrc = isrc,
             durationMs = durationMs,
             quality = MonochromeAudioProvider.qualityStringFor(
-                if (unifiedQuality != UnifiedAudioQuality.YT_HIGH) unifiedQuality else UnifiedAudioQuality.FLAC
+                if (unifiedQuality.isMonochrome) unifiedQuality else UnifiedAudioQuality.FLAC
             ),
         )
         runCatching {

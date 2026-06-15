@@ -135,7 +135,7 @@ fun PlayerMenu(
     val varispeedMode by rememberPreference(VarispeedKey, defaultValue = false)
     val unifiedQualitySetting = rememberPreference(com.metrolist.music.constants.UnifiedAudioQualityKey, defaultValue = "YT_HIGH")
     val monochromeEnabled = remember(unifiedQualitySetting.value) {
-        unifiedQualitySetting.value != com.metrolist.music.constants.UnifiedAudioQuality.YT_HIGH.name
+        unifiedQualitySetting.value in listOf("KBPS_320", "FLAC", "HIRES")
     }
 
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)

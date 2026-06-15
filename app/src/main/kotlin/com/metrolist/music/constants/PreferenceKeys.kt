@@ -239,11 +239,14 @@ val MonochromeBackendKey = stringPreferencesKey("monochromeBackend")
 val MonochromeCustomUrlKey = stringPreferencesKey("monochromeCustomUrl")
 val MonochromeMatchOverridesKey = stringPreferencesKey("monochromeMatchOverrides")
 
-enum class UnifiedAudioQuality {
-    YT_HIGH,
-    HIRES,
-    FLAC,
-    KBPS_320,
+enum class UnifiedAudioQuality(val isMonochrome: Boolean) {
+    YT_LOW(false),
+    YT_MEDIUM(false),
+    YT_AUTO(false),
+    YT_HIGH(false),
+    KBPS_320(true),
+    FLAC(true),
+    HIRES(true),
 }
 
 enum class MonochromeBackend {

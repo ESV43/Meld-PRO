@@ -47,7 +47,6 @@ import com.metrolist.music.LocalDatabase
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.constants.UnifiedAudioQualityKey
-import com.metrolist.music.constants.UnifiedAudioQuality
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.ListThumbnailSize
 import com.metrolist.music.constants.ThumbnailCornerRadius
@@ -92,7 +91,7 @@ fun SpotifyTrackMenu(
 
     val unifiedQualitySetting = rememberPreference(UnifiedAudioQualityKey, defaultValue = "YT_HIGH")
     val monochromeEnabled = remember(unifiedQualitySetting.value) {
-        unifiedQualitySetting.value != UnifiedAudioQuality.YT_HIGH.name
+        unifiedQualitySetting.value in listOf("KBPS_320", "FLAC", "HIRES")
     }
 
     fun resolveAndNavigateToArtist(artistName: String) {

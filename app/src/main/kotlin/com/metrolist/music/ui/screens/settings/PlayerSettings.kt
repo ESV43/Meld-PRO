@@ -238,6 +238,9 @@ fun PlayerSettings(
             values = UnifiedAudioQuality.values().toList(),
             valueText = {
                 when (it) {
+                    UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low)
+                    UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
+                    UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
                     UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high)
                     UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320)
                     UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd)
@@ -338,6 +341,9 @@ fun PlayerSettings(
                     description = {
                         Text(
                             when (unifiedQuality) {
+                                UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low)
+                                UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
+                                UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
                                 UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high)
                                 UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320)
                                 UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd)
@@ -347,7 +353,7 @@ fun PlayerSettings(
                     },
                     onClick = { showUnifiedQualityDialog = true }
                 ))
-                if (unifiedQuality != UnifiedAudioQuality.YT_HIGH) {
+                if (unifiedQuality.isMonochrome) {
                     add(Material3SettingsItem(
                         icon = painterResource(R.drawable.cloud),
                         title = { Text(stringResource(R.string.monochrome_backend)) },
@@ -625,7 +631,7 @@ fun PlayerSettings(
             }
         )
 
-        if (unifiedQuality != UnifiedAudioQuality.YT_HIGH) {
+        if (unifiedQuality.isMonochrome) {
             MonochromeBackendHealthSection(
                 currentBackend = monochromeBackend,
                 customUrl = monochromeCustomUrl

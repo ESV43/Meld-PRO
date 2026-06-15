@@ -75,7 +75,6 @@ import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.LocalSyncUtils
 import com.metrolist.music.R
 import com.metrolist.music.constants.UnifiedAudioQualityKey
-import com.metrolist.music.constants.UnifiedAudioQuality
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.ListThumbnailSize
 import com.metrolist.music.db.entities.ArtistEntity
@@ -171,7 +170,7 @@ fun SongMenu(
 
     val unifiedQualitySetting = rememberPreference(UnifiedAudioQualityKey, defaultValue = "YT_HIGH")
     val monochromeEnabled = remember(unifiedQualitySetting.value) {
-        unifiedQualitySetting.value != UnifiedAudioQuality.YT_HIGH.name
+        unifiedQualitySetting.value in listOf("KBPS_320", "FLAC", "HIRES")
     }
 
     // Resolve the Spotify match — either explicitly supplied or looked up via the YouTube ID

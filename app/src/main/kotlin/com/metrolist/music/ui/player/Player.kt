@@ -355,10 +355,22 @@ fun BottomSheetPlayer(
     var showQualitySelectorDialog by remember { mutableStateOf(false) }
     var showMatchOverrideDialog by remember { mutableStateOf(false) }
 
-    val formatText = remember(currentFormat, activeMatch) {
+    val qualityLabel = remember(unifiedQuality) {
+        when (unifiedQuality) {
+            UnifiedAudioQuality.YT_LOW -> "Low"
+            UnifiedAudioQuality.YT_MEDIUM -> "Medium"
+            UnifiedAudioQuality.YT_AUTO -> "Auto"
+            UnifiedAudioQuality.YT_HIGH -> "High"
+            UnifiedAudioQuality.KBPS_320 -> "320kbps"
+            UnifiedAudioQuality.FLAC -> "FLAC"
+            UnifiedAudioQuality.HIRES -> "Hi-Res"
+        }
+    }
+
+    val formatText = remember(currentFormat, activeMatch, qualityLabel) {
         val fmt = currentFormat
         if (fmt == null) {
-            "High • YT"
+            "$qualityLabel • YT"
         } else if (fmt.itag == 999) {
             val match = activeMatch
             if (match != null) {
@@ -2244,12 +2256,18 @@ fun PlayerQualitySelectorDialog(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             val titleText = when (quality) {
+                                UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low)
+                                UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
+                                UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
                                 UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high)
                                 UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320)
                                 UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd)
                                 UnifiedAudioQuality.HIRES -> stringResource(R.string.monochrome_quality_hires)
                             }
                             val descText = when (quality) {
+                                UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low_desc)
+                                UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium_desc)
+                                UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto_desc)
                                 UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high_desc)
                                 UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320_desc)
                                 UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd_desc)
@@ -2268,7 +2286,7 @@ fun PlayerQualitySelectorDialog(
                     }
                 }
 
-                if (currentQuality != UnifiedAudioQuality.YT_HIGH) {
+                if (currentQuality.isMonochrome) {
                     Spacer(modifier = Modifier.height(8.dp))
                     TextButton(
                         onClick = {

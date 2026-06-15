@@ -543,6 +543,12 @@
     <string name="monochrome_enable">Use Monochrome proxy for higher qualities</string>
     <string name="monochrome_enable_description">Uses third-party Monochrome services to fetch FLAC or Hi-Res streams when the song exists. May stop working at any time — fallback to YouTube is automatic.</string>
     <string name="monochrome_quality">Unified Audio Quality</string>
+    <string name="monochrome_quality_yt_low">Low (YouTube Music)</string>
+    <string name="monochrome_quality_yt_low_desc">Low bitrate stream. Uses less data.</string>
+    <string name="monochrome_quality_yt_medium">Medium (YouTube Music)</string>
+    <string name="monochrome_quality_yt_medium_desc">Balanced bitrate stream. Good quality with moderate data usage.</string>
+    <string name="monochrome_quality_yt_auto">Auto (YouTube Music)</string>
+    <string name="monochrome_quality_yt_auto_desc">Adaptive quality. Adjusts automatically based on network conditions.</string>
     <string name="monochrome_quality_yt_high">High (YouTube Music)</string>
     <string name="monochrome_quality_yt_high_desc">Standard AAC stream. Responsive and reliable.</string>
     <string name="monochrome_quality_kbps_320">320 kbps (Monochrome)</string>

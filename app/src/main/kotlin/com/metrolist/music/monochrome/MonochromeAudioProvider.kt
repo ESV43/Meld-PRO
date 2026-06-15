@@ -79,7 +79,10 @@ object MonochromeAudioProvider {
             UnifiedAudioQuality.HIRES -> "HI_RES_LOSSLESS"
             UnifiedAudioQuality.FLAC -> "LOSSLESS"
             UnifiedAudioQuality.KBPS_320 -> "HIGH"
-            UnifiedAudioQuality.YT_HIGH -> "HIGH" // Fallback fallback
+            UnifiedAudioQuality.YT_LOW -> "LOW"
+            UnifiedAudioQuality.YT_MEDIUM -> "MEDIUM"
+            UnifiedAudioQuality.YT_AUTO -> "HIGH"
+            UnifiedAudioQuality.YT_HIGH -> "HIGH"
         }
 
     fun baseUrlFor(backend: MonochromeBackend, customUrl: String?): String {
