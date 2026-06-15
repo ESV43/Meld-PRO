@@ -106,7 +106,7 @@ fun PlayerSettings(
 ) {
     val (unifiedQuality, onUnifiedQualityChange) = rememberEnumPreference(
         UnifiedAudioQualityKey,
-        defaultValue = UnifiedAudioQuality.YT_HIGH
+        defaultValue = UnifiedAudioQuality.HIGH
     )
     val (monochromeBackend, onMonochromeBackendChange) = rememberEnumPreference(
         MonochromeBackendKey,
@@ -238,12 +238,12 @@ fun PlayerSettings(
             values = UnifiedAudioQuality.values().toList(),
             valueText = {
                 when (it) {
-                    UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low)
-                    UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
-                    UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
-                    UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high)
-                    UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320)
-                    UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd)
+                    UnifiedAudioQuality.LOW -> stringResource(R.string.quality_low)
+                    UnifiedAudioQuality.MEDIUM -> stringResource(R.string.quality_medium)
+                    UnifiedAudioQuality.AUTO -> stringResource(R.string.quality_auto)
+                    UnifiedAudioQuality.HIGH -> stringResource(R.string.quality_high)
+                    UnifiedAudioQuality.VERY_HIGH -> stringResource(R.string.quality_very_high)
+                    UnifiedAudioQuality.LOSSLESS -> stringResource(R.string.quality_lossless)
                     UnifiedAudioQuality.HIRES -> stringResource(R.string.monochrome_quality_hires)
                 }
             }
@@ -341,12 +341,12 @@ fun PlayerSettings(
                     description = {
                         Text(
                             when (unifiedQuality) {
-                                UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low)
-                                UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
-                                UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
-                                UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high)
-                                UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320)
-                                UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd)
+                                UnifiedAudioQuality.LOW -> stringResource(R.string.quality_low)
+                                UnifiedAudioQuality.MEDIUM -> stringResource(R.string.quality_medium)
+                                UnifiedAudioQuality.AUTO -> stringResource(R.string.quality_auto)
+                                UnifiedAudioQuality.HIGH -> stringResource(R.string.quality_high)
+                                UnifiedAudioQuality.VERY_HIGH -> stringResource(R.string.quality_very_high)
+                                UnifiedAudioQuality.LOSSLESS -> stringResource(R.string.quality_lossless)
                                 UnifiedAudioQuality.HIRES -> stringResource(R.string.monochrome_quality_hires)
                             }
                         )

@@ -540,6 +540,8 @@
 
     <!-- Monochrome Strings -->
     <string name="monochrome_audio_quality_section">Audio quality</string>
+    <string name="audio_quality_menu">Audio quality</string>
+    <string name="audio_quality_menu_desc">Change audio quality settings</string>
     <string name="monochrome_enable">Use Monochrome proxy for higher qualities</string>
     <string name="monochrome_enable_description">Uses third-party Monochrome services to fetch FLAC or Hi-Res streams when the song exists. May stop working at any time — fallback to YouTube is automatic.</string>
     <string name="monochrome_quality">Unified Audio Quality</string>

@@ -348,9 +348,9 @@ fun BottomSheetPlayer(
         }
     }
 
-    val unifiedQualitySetting = rememberPreference(key = UnifiedAudioQualityKey, defaultValue = "YT_HIGH")
+    val unifiedQualitySetting = rememberPreference(key = UnifiedAudioQualityKey, defaultValue = "HIGH")
     val unifiedQuality = remember(unifiedQualitySetting.value) {
-        runCatching { UnifiedAudioQuality.valueOf(unifiedQualitySetting.value) }.getOrDefault(UnifiedAudioQuality.YT_HIGH)
+        runCatching { UnifiedAudioQuality.valueOf(unifiedQualitySetting.value) }.getOrDefault(UnifiedAudioQuality.HIGH)
     }
 
     var showQualitySelectorDialog by remember { mutableStateOf(false) }
@@ -358,12 +358,12 @@ fun BottomSheetPlayer(
 
     val qualityLabel = remember(unifiedQuality) {
         when (unifiedQuality) {
-            UnifiedAudioQuality.YT_LOW -> "Low"
-            UnifiedAudioQuality.YT_MEDIUM -> "Medium"
-            UnifiedAudioQuality.YT_AUTO -> "Auto"
-            UnifiedAudioQuality.YT_HIGH -> "High"
-            UnifiedAudioQuality.KBPS_320 -> "320kbps"
-            UnifiedAudioQuality.FLAC -> "FLAC"
+            UnifiedAudioQuality.LOW -> "Low"
+            UnifiedAudioQuality.MEDIUM -> "Medium"
+            UnifiedAudioQuality.AUTO -> "Auto"
+            UnifiedAudioQuality.HIGH -> "High"
+            UnifiedAudioQuality.VERY_HIGH -> "Very High"
+            UnifiedAudioQuality.LOSSLESS -> "Lossless"
             UnifiedAudioQuality.HIRES -> "Hi-Res"
         }
     }
@@ -2170,6 +2170,7 @@ fun MoreActionsButton(
                                     }
                                 }
                             },
+                            onShowQualitySelector = { showQualitySelectorDialog = true },
                             onDismiss = menuState::dismiss,
                         )
                     }
@@ -2214,21 +2215,22 @@ private fun PlayerMoreMenuButton(
                                     }
                                 }
                             },
+                            onShowQualitySelector = { showQualitySelectorDialog = true },
                             onDismiss = menuState::dismiss,
                         )
                     }
                 },
-    ) {
-        Image(
-            painter = painterResource(R.drawable.more_horiz),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(iconButtonColor),
-        )
+        ) {
+            Image(
+                painter = painterResource(R.drawable.more_horiz),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(iconButtonColor),
+            )
+        }
     }
-}
 
-@Composable
-fun PlayerQualitySelectorDialog(
+    @Composable
+    fun PlayerQualitySelectorDialog(
     currentQuality: UnifiedAudioQuality,
     onQualitySelected: (UnifiedAudioQuality) -> Unit,
     onOverrideMatchClicked: () -> Unit,
@@ -2257,21 +2259,21 @@ fun PlayerQualitySelectorDialog(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             val titleText = when (quality) {
-                                UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low)
-                                UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
-                                UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
-                                UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high)
-                                UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320)
-                                UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd)
+                                UnifiedAudioQuality.LOW -> stringResource(R.string.monochrome_quality_yt_low)
+                                UnifiedAudioQuality.MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium)
+                                UnifiedAudioQuality.AUTO -> stringResource(R.string.monochrome_quality_yt_auto)
+                                UnifiedAudioQuality.HIGH -> stringResource(R.string.monochrome_quality_yt_high)
+                                UnifiedAudioQuality.VERY_HIGH -> stringResource(R.string.monochrome_quality_kbps_320)
+                                UnifiedAudioQuality.LOSSLESS -> stringResource(R.string.monochrome_quality_cd)
                                 UnifiedAudioQuality.HIRES -> stringResource(R.string.monochrome_quality_hires)
                             }
                             val descText = when (quality) {
-                                UnifiedAudioQuality.YT_LOW -> stringResource(R.string.monochrome_quality_yt_low_desc)
-                                UnifiedAudioQuality.YT_MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium_desc)
-                                UnifiedAudioQuality.YT_AUTO -> stringResource(R.string.monochrome_quality_yt_auto_desc)
-                                UnifiedAudioQuality.YT_HIGH -> stringResource(R.string.monochrome_quality_yt_high_desc)
-                                UnifiedAudioQuality.KBPS_320 -> stringResource(R.string.monochrome_quality_kbps_320_desc)
-                                UnifiedAudioQuality.FLAC -> stringResource(R.string.monochrome_quality_cd_desc)
+                                UnifiedAudioQuality.LOW -> stringResource(R.string.monochrome_quality_yt_low_desc)
+                                UnifiedAudioQuality.MEDIUM -> stringResource(R.string.monochrome_quality_yt_medium_desc)
+                                UnifiedAudioQuality.AUTO -> stringResource(R.string.monochrome_quality_yt_auto_desc)
+                                UnifiedAudioQuality.HIGH -> stringResource(R.string.monochrome_quality_yt_high_desc)
+                                UnifiedAudioQuality.VERY_HIGH -> stringResource(R.string.monochrome_quality_kbps_320_desc)
+                                UnifiedAudioQuality.LOSSLESS -> stringResource(R.string.monochrome_quality_cd_desc)
                                 UnifiedAudioQuality.HIRES -> stringResource(R.string.monochrome_quality_hires_desc)
                             }
                             Text(

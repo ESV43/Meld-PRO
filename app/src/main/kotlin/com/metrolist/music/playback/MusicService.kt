@@ -87,6 +87,7 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.AndroidAutoTargetPlaylistKey
 import com.metrolist.music.constants.AudioNormalizationKey
 import com.metrolist.music.constants.AudioOffload
+import com.metrolist.music.constants.AudioQuality
 import com.metrolist.music.constants.AudioQualityKey
 import com.metrolist.music.constants.UnifiedAudioQuality
 import com.metrolist.music.constants.UnifiedAudioQualityKey
@@ -3484,129 +3485,13 @@ class MusicService :
             // Check if we need to bypass cache for quality change
             val shouldBypassCache = bypassCacheForQualityChange.contains(mediaId)
 
-            // Monochrome attempt: when a Monochrome quality is selected, try Monochrome for every track.
-            // Uses Spotify metadata (with ISRC) when available — otherwise falls back
-            // to DB title/artist/album for YT-native tracks. Silently falls through
-            // to the YouTube path on any failure or if a YT-native quality is selected.
-            val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.YT_HIGH)
+            val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.AUTO)
             val monochromeEnabled = unifiedQuality.isMonochrome
+
+            // Monochrome first attempt: for qualities that prefer the alternative source
             if (monochromeEnabled) {
-                val monochromeBackend = dataStore.get(MonochromeBackendKey).toEnum(MonochromeBackend.OFFICIAL)
-                val customUrl = dataStore.get(MonochromeCustomUrlKey, "")
-                val monochromeKey = monochromeCacheKey(mediaId, unifiedQuality)
-                val usePlayerCache = dataStore.get(EnableSongCacheKey, true)
-
-                if (!shouldBypassCache &&
-                    (downloadCache.isCached(monochromeKey, dataSpec.position,
-                        if (dataSpec.length >= 0) dataSpec.length else 1) ||
-                        (usePlayerCache && playerCache.isCached(monochromeKey, dataSpec.position, CHUNK_LENGTH)))
-                ) {
-                    return@Factory dataSpec.buildUpon().setKey(monochromeKey).build()
-                }
-
-                val spotifyTrack = SpotifyMetadataRegistry.get(mediaId)
-                val dbSong = runBlocking(Dispatchers.IO) { database.getSongById(mediaId) }
-                val monochromeQuery = buildMonochromeQuery(mediaId, spotifyTrack, dbSong, unifiedQuality)
-
-                if (monochromeQuery != null) {
-                    val manualOverride = runBlocking(Dispatchers.IO) {
-                        MonochromeMatchOverrides
-                            .decode(dataStore.get(MonochromeMatchOverridesKey, ""))[mediaId]
-                    }
-                    val savedMatch = runBlocking(Dispatchers.IO) {
-                        database.getQobuzMatch(mediaId) // Reuse qobuz_match table!
-                    }
-                    val negativeMissDeadline = monochromeMissUntilMs[mediaId]
-                    val skipMonochromeForMiss = manualOverride == null && savedMatch == null &&
-                        negativeMissDeadline != null && negativeMissDeadline > System.currentTimeMillis()
-                    if (skipMonochromeForMiss) {
-                        val remainingMin = ((negativeMissDeadline ?: 0L) -
-                            System.currentTimeMillis()) / 60_000
-                        Timber.tag("MusicService").d(
-                            "Skipping Monochrome cascade for $mediaId (negative cache valid for ${remainingMin}m)"
-                        )
-                    }
-
-                    var effectiveQuery = monochromeQuery
-                    if (manualOverride != null) {
-                        effectiveQuery = effectiveQuery.copy(mediaId = manualOverride.providerMediaId())
-                    }
-                    if (savedMatch != null && manualOverride == null) {
-                        MonochromeAudioProvider.primeKnownTrack(
-                            query = effectiveQuery,
-                            trackId = savedMatch.qobuzTrackId,
-                            hires = savedMatch.hires,
-                            bitDepth = savedMatch.bitDepth,
-                            samplingRateKhz = savedMatch.samplingRateKhz,
-                            isrc = effectiveQuery.isrc,
-                        )
-                    }
-
-                    var monochromeResolved = if (skipMonochromeForMiss) null else runCatching {
-                        runBlocking(Dispatchers.IO) {
-                            withTimeout(4_000L) {
-                                MonochromeAudioProvider.resolve(effectiveQuery, monochromeBackend, customUrl)
-                            }
-                        }
-                    }.getOrNull()
-
-                    val knownOnMonochrome = manualOverride != null || savedMatch != null
-
-                    if (monochromeResolved == null && !knownOnMonochrome) {
-                        monochromeMissUntilMs[mediaId] = System.currentTimeMillis() + MONOCHROME_MISS_TTL_MS
-                    }
-
-                    if (monochromeResolved != null) {
-                        Timber.tag("MusicService").i(
-                            "Using Monochrome stream for $mediaId: ${monochromeResolved.label}",
-                        )
-                        val resolvedIsrc = monochromeResolved.isrc?.takeIf { it.isNotBlank() }
-                            ?: spotifyTrack?.isrc?.takeIf { it.isNotBlank() }
-                        val previousIsrc = dbSong?.song?.isrc?.takeIf { it.isNotBlank() }
-
-                        // Save FormatEntity to Room DB so UI updates active format pill
-                        val resolved = monochromeResolved
-                        database.query {
-                            upsert(
-                                FormatEntity(
-                                    id = mediaId,
-                                    itag = 999, // special itag for Monochrome
-                                    mimeType = resolved.mimeType,
-                                    codecs = resolved.codecs,
-                                    bitrate = resolved.bitrate,
-                                    sampleRate = resolved.sampleRate,
-                                    contentLength = 0L,
-                                    loudnessDb = null,
-                                    perceptualLoudnessDb = null,
-                                    playbackUrl = null,
-                                ),
-                            )
-                        }
-
-                        scope.launch(Dispatchers.IO) {
-                            database.query {
-                                upsertQobuzMatch(
-                                    QobuzMatchEntity(
-                                        youtubeId = mediaId,
-                                        qobuzTrackId = resolved.trackId,
-                                        hires = resolved.hires,
-                                        bitDepth = resolved.bitDepth,
-                                        samplingRateKhz = resolved.samplingRateKhz,
-                                    ),
-                                )
-                                if (resolvedIsrc != null && resolvedIsrc != previousIsrc) {
-                                    setSongIsrc(mediaId, resolvedIsrc)
-                                }
-                            }
-                        }
-                        scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
-                        return@Factory dataSpec
-                            .buildUpon()
-                            .setUri(monochromeResolved.mediaUri.toUri())
-                            .setKey(monochromeKey)
-                            .build()
-                    }
-                }
+                val monochromeResult = tryResolveMonochrome(mediaId, unifiedQuality, dataSpec, shouldBypassCache)
+                if (monochromeResult != null) return@Factory monochromeResult
             }
 
             if (!shouldBypassCache) {
@@ -3630,56 +3515,34 @@ class MusicService :
                 Timber.tag("MusicService").i("BYPASSING CACHE for $mediaId due to quality change")
             }
 
-            Timber.tag("MusicService").i("FETCHING STREAM: $mediaId | quality=$audioQuality")
+            val ytFallbackQuality = when (unifiedQuality) {
+                UnifiedAudioQuality.LOW -> AudioQuality.LOW
+                UnifiedAudioQuality.MEDIUM, UnifiedAudioQuality.AUTO, UnifiedAudioQuality.HIGH -> AudioQuality.AUTO
+                UnifiedAudioQuality.VERY_HIGH, UnifiedAudioQuality.LOSSLESS, UnifiedAudioQuality.HIRES -> AudioQuality.HIGH
+            }
+            Timber.tag("MusicService").i("FETCHING STREAM: $mediaId | unifiedQuality=$unifiedQuality ytFallbackQuality=$ytFallbackQuality")
             val playbackData =
                 runBlocking(Dispatchers.IO) {
-                    // Hard cap on stream resolution so a stuck YouTube/PoToken/NewPipe
-                    // call can't keep a song "loading" forever. ExoPlayer surfaces the
-                    // PlaybackException to the user as a skip-able error.
                     try {
                         withTimeout(15_000L) {
                             YTPlayerUtils.playerResponseForPlayback(
                                 mediaId,
-                                audioQuality = audioQuality,
+                                audioQuality = ytFallbackQuality,
                                 connectivityManager = connectivityManager,
                             )
                         }
                     } catch (e: TimeoutCancellationException) {
                         Result.failure(java.net.SocketTimeoutException("Stream resolution timed out"))
                     }
-                }.getOrElse { throwable ->
-                    when (throwable) {
-                        is PlaybackException -> {
-                            throw throwable
-                        }
-
-                        is java.net.ConnectException, is java.net.UnknownHostException -> {
-                            throw PlaybackException(
-                                getString(R.string.error_no_internet),
-                                throwable,
-                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
-                            )
-                        }
-
-                        is java.net.SocketTimeoutException -> {
-                            throw PlaybackException(
-                                getString(R.string.error_timeout),
-                                throwable,
-                                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
-                            )
-                        }
-
-                        else -> {
-                            throw PlaybackException(
-                                getString(R.string.error_unknown),
-                                throwable,
-                                PlaybackException.ERROR_CODE_REMOTE_ERROR,
-                            )
-                        }
-                    }
                 }
 
-            val nonNullPlayback =
+            // YouTube failed — try Monochrome as fallback for non-Monochrome qualities
+            if (playbackData.isFailure && !monochromeEnabled) {
+                val fallbackResult = tryResolveMonochrome(mediaId, unifiedQuality, dataSpec, shouldBypassCache)
+                if (fallbackResult != null) return@Factory fallbackResult
+            }
+
+            val nonNullPlayback = playbackData.getOrElse { throwable ->
                 requireNotNull(playbackData) {
                     getString(R.string.error_unknown)
                 }
@@ -4230,11 +4093,17 @@ class MusicService :
     suspend fun getStreamUrl(mediaId: String): String? =
         withContext(Dispatchers.IO) {
             try {
+                val unifiedQuality = dataStore.get(UnifiedAudioQualityKey).toEnum(UnifiedAudioQuality.YT_HIGH)
+                val castQuality = when (unifiedQuality) {
+                    UnifiedAudioQuality.YT_LOW -> AudioQuality.LOW
+                    UnifiedAudioQuality.YT_MEDIUM, UnifiedAudioQuality.YT_AUTO, UnifiedAudioQuality.YT_HIGH -> AudioQuality.AUTO
+                    UnifiedAudioQuality.KBPS_320, UnifiedAudioQuality.FLAC, UnifiedAudioQuality.HIRES -> AudioQuality.HIGH
+                }
                 val playbackData =
                     YTPlayerUtils
                         .playerResponseForPlayback(
                             videoId = mediaId,
-                            audioQuality = audioQuality,
+                            audioQuality = castQuality,
                             connectivityManager = connectivityManager,
                         ).getOrNull()
                 playbackData?.streamUrl

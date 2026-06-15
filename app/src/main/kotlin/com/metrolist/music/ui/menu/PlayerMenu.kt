@@ -111,6 +111,7 @@ fun PlayerMenu(
     playerBottomSheetState: BottomSheetState,
     isQueueTrigger: Boolean? = false,
     onShowDetailsDialog: () -> Unit,
+    onShowQualitySelector: (() -> Unit)? = null,
     onDismiss: () -> Unit,
 ) {
     mediaMetadata ?: return
@@ -133,9 +134,9 @@ fun PlayerMenu(
     val castDeviceName by castHandler?.castDeviceName?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
 
     val varispeedMode by rememberPreference(VarispeedKey, defaultValue = false)
-    val unifiedQualitySetting = rememberPreference(com.metrolist.music.constants.UnifiedAudioQualityKey, defaultValue = "YT_HIGH")
+    val unifiedQualitySetting = rememberPreference(com.metrolist.music.constants.UnifiedAudioQualityKey, defaultValue = "HIGH")
     val monochromeEnabled = remember(unifiedQualitySetting.value) {
-        unifiedQualitySetting.value in listOf("KBPS_320", "FLAC", "HIRES")
+        unifiedQualitySetting.value in listOf("VERY_HIGH", "LOSSLESS", "HIRES")
     }
 
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
@@ -788,6 +789,49 @@ fun PlayerMenu(
                                 },
                             ),
                         )
+
+                        if (onShowQualitySelector != null) {
+                            val showQualitySelector = onShowQualitySelector
+                            val qualityTitle = when {
+                                monochromeEnabled -> com.metrolist.music.constants.UnifiedAudioQuality.entries
+                                    .find { it.name == unifiedQualitySetting.value }
+                                    ?.let {
+                                        when (it) {
+                                            com.metrolist.music.constants.UnifiedAudioQuality.VERY_HIGH -> stringResource(com.metrolist.music.R.string.quality_very_high)
+                                            com.metrolist.music.constants.UnifiedAudioQuality.LOSSLESS -> stringResource(com.metrolist.music.R.string.quality_lossless)
+                                            com.metrolist.music.constants.UnifiedAudioQuality.HIRES -> stringResource(com.metrolist.music.R.string.monochrome_quality_hires)
+                                            else -> ""
+                                        }
+                                    } ?: ""
+                                else -> when (unifiedQualitySetting.value) {
+                                    "LOW" -> stringResource(com.metrolist.music.R.string.quality_low)
+                                    "MEDIUM" -> stringResource(com.metrolist.music.R.string.quality_medium)
+                                    "AUTO" -> stringResource(com.metrolist.music.R.string.quality_auto)
+                                    "HIGH" -> stringResource(com.metrolist.music.R.string.quality_high)
+                                    else -> ""
+                                }
+                            }
+
+                            add(
+                                Material3MenuItemData(
+                                    title = { Text(text = stringResource(R.string.audio_quality_menu)) },
+                                    description = {
+                                        Text(text = if (qualityTitle.isNotEmpty()) qualityTitle else stringResource(R.string.audio_quality_menu_desc))
+                                    },
+                                    icon = {
+                                        Icon(
+                                            painter = painterResource(R.drawable.graphic_eq),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                        )
+                                    },
+                                    onClick = {
+                                        showQualitySelector()
+                                        onDismiss()
+                                    },
+                                ),
+                            )
+                        }
 
                         if (isQueueTrigger != true) {
                             add(
