@@ -39,12 +39,10 @@ The name "Meld" reflects the core idea: **melding** two music platforms into a s
 - **Artist navigation** — Tap any Spotify artist on the home screen to navigate directly to their YouTube Music artist page
 
 ### Lossless Audio (Experimental)
-- **Qobuz backend** — Optional FLAC and Hi-Res (up to 24-bit / 192 kHz) streaming via the Qobuz catalog, replacing YouTube Music's lossy audio
-- **Deterministic matching** — Uses ISRC (the universal track identifier shared by Spotify and Qobuz) so Spotify-sourced tracks resolve to their exact Qobuz counterpart without ambiguity
-- **Persistent match cache** — Once a track has been resolved on Qobuz, the match is saved locally so subsequent plays skip the search step entirely
-- **Multi-backend fallback** — Three independent Qobuz resolvers (Monokenny, Jumo, Squid) are tried in sequence if the primary one is rate-limited or unavailable
+- **Monochromw backend** — Optional FLAC and Hi-Res (up to 24-bit / 192 kHz) streaming via the Monochrome, replacing YouTube Music's lossy audio
+- **Deterministic matching** — Uses ISRC (the universal track identifier shared by Spotify and Monochrome) so Spotify-sourced tracks resolve to their exact Hires counterpart without ambiguity
 - **Quality tiers** — Choose between AAC 320 kbps, CD quality (16-bit / 44.1 kHz), or Hi-Res (up to 24-bit / 192 kHz) per your preference and connection
-- **Automatic YouTube fallback** — If a track isn't on Qobuz, or all resolvers fail, playback falls back silently to the standard YouTube Music stream — no error, no skip
+- **Automatic YouTube fallback** — If a track isn't on Monochrome, or all resolvers fail, playback falls back silently to the standard YouTube Music stream — no error, no skip
 - **Hidden behind a toggle** — Disabled by default; opt-in from the Spotify integration settings
 
 ### Core Music Features
