@@ -3727,22 +3727,25 @@ class MusicService :
         }
     }
 
-    private fun createMediaSourceFactory() =
-        object : DefaultMediaSourceFactory(
+    private fun createMediaSourceFactory(): MediaSource.Factory {
+        val innerFactory = DefaultMediaSourceFactory(
             createDataSourceFactory(),
             DefaultExtractorsFactory(),
-        ) {
+        )
+        return object : MediaSource.Factory {
             override fun createMediaSource(mediaItem: MediaItem): MediaSource {
                 val uri = mediaItem.localConfiguration?.uri
-                if (uri != null && uri.toString().startsWith("data:application/dash+xml")) {
-                    val updatedMediaItem = mediaItem.buildUpon()
+                val updatedItem = if (uri != null && uri.toString().startsWith("data:application/dash+xml")) {
+                    mediaItem.buildUpon()
                         .setMimeType("application/dash+xml")
                         .build()
-                    return super.createMediaSource(updatedMediaItem)
+                } else {
+                    mediaItem
                 }
-                return super.createMediaSource(mediaItem)
+                return innerFactory.createMediaSource(updatedItem)
             }
         }
+    }
 
     private fun createRenderersFactory(
         eqProcessor: CustomEqualizerAudioProcessor,

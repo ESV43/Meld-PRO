@@ -214,6 +214,8 @@ fun BottomSheetPlayer(
     val copiedArtistStr = stringResource(R.string.copied_artist)
     val bottomSheetPageState = LocalBottomSheetPageState.current
     val playerConnection = LocalPlayerConnection.current ?: return
+    val database = LocalDatabase.current
+    val coroutineScope = rememberCoroutineScope()
 
     val (useNewPlayerDesign, onUseNewPlayerDesignChange) =
         rememberPreference(
