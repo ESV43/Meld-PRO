@@ -104,10 +104,22 @@ android {
             keyPassword = System.getenv("KEY_PASSWORD")
         }
         getByName("debug") {
+            val debugKeystore = file("${System.getProperty("user.home")}/.android/debug.keystore")
+            if (!debugKeystore.exists()) {
+                debugKeystore.parentFile.mkdirs()
+                exec {
+                    commandLine(
+                        "keytool", "-genkey", "-v", "-keystore", debugKeystore.absolutePath,
+                        "-storepass", "android", "-alias", "androiddebugkey",
+                        "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048",
+                        "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US"
+                    )
+                }
+            }
+            storeFile = debugKeystore
+            storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
-            storePassword = "android"
-            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
         }
     }
 
